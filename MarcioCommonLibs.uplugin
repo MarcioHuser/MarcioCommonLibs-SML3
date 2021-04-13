@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
+	"Version": 2,
 	"VersionName": "1.0.0",
 	"SemVersion": "1.0.0",
 	"FriendlyName": "MarcioCommonLibs",
@@ -8,7 +8,7 @@
 	"Category": "Modding",
 	"CreatedBy": "Marcio Neves",
 	"CreatedByURL": "https://ficsit.app/user/27uDm1v7WoUoDX",
-	"DocsURL": "",
+	"DocsURL": "https://ficsit.app/mod/8bZeFi2oH4rHu2",
 	"MarketplaceURL": "",
 	"SupportURL": "",
 	"CanContainContent": true,
@@ -18,7 +18,8 @@
 	"Plugins": [
 		{
 			"Name": "SML",
-			"Enabled": false
+			"SemVersion": "^3.0.0",
+			"Enabled": true
 		}
 	]
 }
