@@ -1,0 +1,77 @@
+﻿#pragma once
+#include "Subsystem/ModSubsystem.h"
+
+#include "CommonInfoSubsystem.generated.h"
+
+UCLASS(BlueprintType)
+class MARCIOCOMMONLIBS_API ACommonInfoSubsystem : public AModSubsystem
+{
+	GENERATED_BODY()
+public:
+	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs", DisplayName= "Get Common Info Subsystem")
+	static ACommonInfoSubsystem* Get(/*UWorld* world*/);
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual void Initialize
+	(
+		UPARAM(DisplayName = "None Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_noneItemDescriptors,
+		UPARAM(DisplayName = "Wildcard Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_wildcardItemDescriptors,
+		UPARAM(DisplayName = "Any Undefined Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_anyUndefinedItemDescriptors,
+		UPARAM(DisplayName = "Overflow Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_overflowItemDescriptors,
+		UPARAM(DisplayName = "Nuclear Waste Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_nuclearWasteItemDescriptors
+	);
+
+	UFUNCTION()
+	virtual void handleBuildableConstructed(class AFGBuildable* buildable);
+
+	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
+	virtual bool IsValidBuildable(class AFGBuildable* newBuildable);
+
+	virtual void addTeleporter(class AFGBuildableFactory* teleporter);
+	virtual void addUndergroundInputBelt(class AFGBuildableStorage* actor);
+
+	UFUNCTION()
+	virtual void removeTeleporter(AActor* teleporter, EEndPlayReason::Type reason);
+	UFUNCTION()
+	virtual void removeUndergroundInputBelt(AActor* undergroundInputBelt, EEndPlayReason::Type reason);
+
+	static FCriticalSection mclCritical;
+
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	bool initialized = false;
+
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	UClass* baseStorageTeleporterClass = nullptr;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	UClass* baseUndergroundSplitterInputClass = nullptr;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	UClass* baseUndergroundSplitterOutputClass = nullptr;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	UClass* baseModularLoadBalancerClass = nullptr;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	UClass* baseBuildableFactorySimpleProducerClass = nullptr;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	UClass* baseCounterLimiterClass = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<TSubclassOf<class UFGItemDescriptor>> nuclearWasteItemDescriptors;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<TSubclassOf<class UFGItemDescriptor>> noneItemDescriptors;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<TSubclassOf<class UFGItemDescriptor>> wildCardItemDescriptors;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<TSubclassOf<class UFGItemDescriptor>> anyUndefinedItemDescriptors;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<TSubclassOf<class UFGItemDescriptor>> overflowItemDescriptors;
+
+	TSet<class AFGBuildableFactory*> allTeleporters;
+	TSet<class AFGBuildableStorage*> allUndergroundInputBelts;
+
+	// FActorEndPlaySignature::FDelegate removeTeleporterDelegate;
+protected:
+	static ACommonInfoSubsystem* instance;
+};
