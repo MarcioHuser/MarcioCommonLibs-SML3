@@ -63,7 +63,7 @@ public class MarcioCommonLibs : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"RenderCore", "EfficiencyCheckerMod",
+				"RenderCore",
 				// ... add private dependencies that you statically link with here ...	
 			}
 		);

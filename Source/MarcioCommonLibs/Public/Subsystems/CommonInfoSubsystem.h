@@ -25,6 +25,41 @@ public:
 		UPARAM(DisplayName = "Nuclear Waste Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_nuclearWasteItemDescriptors
 	);
 
+	virtual void AddClass(TSet<UClass*>& classes, const FString& classPath);
+	
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsStorageTeleporter(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+	
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsPowerPole(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsPowerPoleWall(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsPowerPoleWallDouble(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsPowerTower(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsStorageContainer(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
+	virtual bool IsModularLoadBalancer(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+	
+	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
+	virtual bool IsCounterLimiter(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+	
+	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
+	virtual bool IsUndergroundSplitter(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+	
+	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
+	virtual bool IsUndergroundSplitterInput(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+	
+	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
+	virtual bool IsUndergroundSplitterOutput(AActor* actor, TSubclassOf<AActor> cls = nullptr);
+
 	UFUNCTION()
 	virtual void handleBuildableConstructed(class AFGBuildable* buildable);
 
@@ -56,6 +91,18 @@ public:
 	UClass* baseBuildableFactorySimpleProducerClass = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
 	UClass* baseCounterLimiterClass = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<UClass*> storageContainerClasses;
+
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<UClass*> powerPoleClasses;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<UClass*> powerPoleWallClasses;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<UClass*> powerPoleWallDoubleClasses;
+	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
+	TSet<UClass*> powerTowerClasses;
 
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
 	TSet<TSubclassOf<class UFGItemDescriptor>> nuclearWasteItemDescriptors;

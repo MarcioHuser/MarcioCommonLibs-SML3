@@ -4,7 +4,6 @@
 #include "Buildables/FGBuildableStorage.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
-#include "Logic/EfficiencyCheckerLogic.h"
 #include "Subsystem/SubsystemActorManager.h"
 #include "Util/MarcioCommonLibsConfiguration.h"
 #include "Util/MCLOptimize.h"
@@ -40,6 +39,13 @@ void ACommonInfoSubsystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	baseModularLoadBalancerClass = nullptr;
 	baseBuildableFactorySimpleProducerClass = nullptr;
 	baseCounterLimiterClass = nullptr;
+
+	storageContainerClasses.Empty();
+
+	powerPoleClasses.Empty();
+	powerPoleWallClasses.Empty();
+	powerPoleWallDoubleClasses.Empty();
+	powerTowerClasses.Empty();
 
 	allTeleporters.Empty();
 	allUndergroundInputBelts.Empty();
@@ -78,6 +84,24 @@ void ACommonInfoSubsystem::Initialize
 	baseBuildableFactorySimpleProducerClass = UClass::TryFindTypeSlow<UClass>(TEXT("/Script/FactoryGame.FGBuildableFactorySimpleProducer"));
 	baseCounterLimiterClass = UClass::TryFindTypeSlow<UClass>(TEXT("/Script/CounterLimiter.CL_CounterLimiter"));
 
+	AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk1/Build_StorageContainerMk1.Build_StorageContainerMk1_C"));
+	AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk2/Build_StorageContainerMk2.Build_StorageContainerMk2_C"));
+
+	AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk1/Build_PowerPoleMk1.Build_PowerPoleMk1_C"));
+	AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk2/Build_PowerPoleMk2.Build_PowerPoleMk2_C"));
+	AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk3/Build_PowerPoleMk3.Build_PowerPoleMk3_C"));
+
+	AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall.Build_PowerPoleWall_C"));
+	AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk2.Build_PowerPoleWall_Mk2_C"));
+	AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk3.Build_PowerPoleWall_Mk3_C"));
+
+	AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble.Build_PowerPoleWallDouble_C"));
+	AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk2.Build_PowerPoleWallDouble_Mk2_C"));
+	AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk3.Build_PowerPoleWallDouble_Mk3_C"));
+
+	AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTower.Build_PowerTower_C"));
+	AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTowerPlatform.Build_PowerTowerPlatform_C"));
+
 	// removeTeleporterDelegate.BindDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
 
 	auto buildableSubsystem = AFGBuildableSubsystem::Get(this);
@@ -100,6 +124,119 @@ void ACommonInfoSubsystem::Initialize
 	initialized = true;
 }
 
+void ACommonInfoSubsystem::AddClass(TSet<UClass*>& classes, const FString& classPath)
+{
+	if (auto foundClass = UClass::TryFindTypeSlow<UClass>(classPath))
+	{
+		classes.Add(foundClass);
+	}
+}
+
+bool ACommonInfoSubsystem::IsStorageTeleporter(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && baseStorageTeleporterClass && cls->IsChildOf(baseStorageTeleporterClass);
+}
+
+bool ACommonInfoSubsystem::IsPowerPole(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && powerPoleClasses.Contains(cls);
+}
+
+bool ACommonInfoSubsystem::IsPowerPoleWall(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && powerPoleWallClasses.Contains(cls);
+}
+
+bool ACommonInfoSubsystem::IsPowerPoleWallDouble(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && powerPoleWallDoubleClasses.Contains(cls);
+}
+
+bool ACommonInfoSubsystem::IsPowerTower(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && powerTowerClasses.Contains(cls);
+}
+
+bool ACommonInfoSubsystem::IsStorageContainer(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && storageContainerClasses.Contains(cls);
+}
+
+bool ACommonInfoSubsystem::IsModularLoadBalancer(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && baseModularLoadBalancerClass && cls->IsChildOf(baseModularLoadBalancerClass);
+}
+
+bool ACommonInfoSubsystem::IsCounterLimiter(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && baseCounterLimiterClass && cls->IsChildOf(baseCounterLimiterClass);
+}
+
+bool ACommonInfoSubsystem::IsUndergroundSplitter(AActor* actor, TSubclassOf<AActor> cls)
+{
+	return IsUndergroundSplitterInput(actor, cls) || IsUndergroundSplitterOutput(actor, cls);
+}
+
+bool ACommonInfoSubsystem::IsUndergroundSplitterInput(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && baseUndergroundSplitterInputClass && cls->IsChildOf(baseUndergroundSplitterInputClass);
+}
+
+bool ACommonInfoSubsystem::IsUndergroundSplitterOutput(AActor* actor, TSubclassOf<AActor> cls)
+{
+	if (actor)
+	{
+		cls = actor->GetClass();
+	}
+
+	return cls && baseUndergroundSplitterOutputClass && cls->IsChildOf(baseUndergroundSplitterOutputClass);
+}
+
 void ACommonInfoSubsystem::handleBuildableConstructed(AFGBuildable* buildable)
 {
 	IsValidBuildable(buildable);
@@ -112,9 +249,7 @@ bool ACommonInfoSubsystem::IsValidBuildable(AFGBuildable* newBuildable)
 		return false;
 	}
 
-	auto commonInfoSubsystem = ACommonInfoSubsystem::Get();
-
-	if (commonInfoSubsystem->baseUndergroundSplitterInputClass && newBuildable->IsA(commonInfoSubsystem->baseUndergroundSplitterInputClass))
+	if (IsUndergroundSplitterInput(newBuildable))
 	{
 		if (auto underGroundBelt = Cast<AFGBuildableStorage>(newBuildable))
 		{
@@ -123,13 +258,11 @@ bool ACommonInfoSubsystem::IsValidBuildable(AFGBuildable* newBuildable)
 			return true;
 		}
 	}
-	else if ( /*!UMarcioCommonLibsConfiguration::configuration.ignoreStorageTeleporter &&*/
-		commonInfoSubsystem->baseStorageTeleporterClass &&
-		newBuildable->IsA(commonInfoSubsystem->baseStorageTeleporterClass))
+	else if (IsStorageTeleporter(newBuildable))
 	{
 		if (auto storageTeleporter = Cast<AFGBuildableFactory>(newBuildable))
 		{
-			commonInfoSubsystem->addTeleporter(storageTeleporter);
+			addTeleporter(storageTeleporter);
 		}
 
 		return true;

@@ -6,6 +6,7 @@
 #include "AbstractInstanceManager.h"
 #include "FactoryTick.h"
 #include "FGCategory.h"
+#include "FGCharacterPlayer.h"
 #include "FGFactoryConnectionComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkinnedAssetCommon.h"
@@ -56,7 +57,7 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 			}
 		}
 
-		auto baseFileName = filePrefix + obj->GetClass()->GetName() + (includeDateTime ? FDateTime::Now().ToString(TEXT("-%Y%m%d_%H%M%S")) : TEXT("")) + fileSuffix;
+		auto baseFileName = filePrefix + obj->GetName() + (includeDateTime ? FDateTime::Now().ToString(TEXT("-%Y%m%d_%H%M%S")) : TEXT("")) + fileSuffix;
 
 		auto dumpFile = FPaths::Combine(
 			dumpFolder,
@@ -240,7 +241,8 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 				}
 				else if (cppType == TEXT("UWidgetComponent*"))
 				{
-					auto widgetComponent = GetValid(objectProperty->ContainerPtrToValuePtr<UWidgetComponent>(obj));
+					auto widgetComponentPtr = objectProperty->ContainerPtrToValuePtr<UWidgetComponent*>(obj);
+					auto widgetComponent = GetValid(*widgetComponentPtr);
 					if (widgetComponent)
 					{
 						sb << linePrefix << TEXT("            - ") << *GetPathNameSafe(widgetComponent->GetClass()) << EOL;
@@ -494,6 +496,15 @@ void UMarcioCommonLibsUtils::DumpInformation(AActor* worldContext, TSubclassOf<U
 		MCL_LOG_Display(TEXT(" Dump done"));
 		MCL_LOG_Display(TEXT("===="));
 	}
+}
+
+AFGCharacterPlayer* UMarcioCommonLibsUtils::GetFGPlayer(UWidget* widget)
+{
+	auto owningPlayer = widget->GetOwningPlayer();
+
+	auto pawn = owningPlayer->K2_GetPawn();
+
+	return Cast<AFGCharacterPlayer>(pawn);
 }
 
 FString UMarcioCommonLibsUtils::getEnumItemName(const TCHAR* name, int value)
