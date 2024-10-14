@@ -28,5 +28,5 @@ public:
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils", BlueprintPure)
 	static class AFGCharacterPlayer* GetFGPlayer(class UWidget* widget);
 
-	static FString getEnumItemName(const TCHAR* name, int value);
+	static FString getEnumItemName(UEnum* MyEnum, int value);
 };

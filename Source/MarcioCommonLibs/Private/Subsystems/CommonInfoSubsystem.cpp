@@ -4,6 +4,7 @@
 #include "Buildables/FGBuildableStorage.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "Subsystem/SubsystemActorManager.h"
 #include "Util/MarcioCommonLibsConfiguration.h"
 #include "Util/MCLOptimize.h"

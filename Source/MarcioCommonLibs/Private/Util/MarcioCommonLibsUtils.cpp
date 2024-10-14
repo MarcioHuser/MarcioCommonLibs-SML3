@@ -17,7 +17,6 @@
 #include "Reflection/BlueprintReflectionLibrary.h"
 #include "Resources/FGEquipmentDescriptor.h"
 #include "UMG/Public/Components/WidgetComponent.h"
-#include "Equipment/FGEquipmentAttachment.h"
 #include "Engine/SkeletalMesh.h"
 
 #ifndef OPTIMIZE
@@ -115,8 +114,8 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 				strProperty ||
 				textProperty ||
 				classProperty ||
-				objectProperty && objectProperty->PropertyClass ||
-				weakObjectProperty && weakObjectProperty->PropertyClass ||
+				(objectProperty && objectProperty->PropertyClass) ||
+				(weakObjectProperty && weakObjectProperty->PropertyClass) ||
 				arrayProperty ||
 				byteProperty ||
 				nameProperty ||
@@ -404,7 +403,7 @@ void UMarcioCommonLibsUtils::DumpInformation(AActor* worldContext, TSubclassOf<U
 			return;
 		}
 
-		MCL_LOG_Display(TEXT("    Equipment stack size = "), *getEnumItemName(TEXT("EStackSize"), (int)UFGEquipmentDescriptor::GetStackSize(equipmentDescriptorClass)));
+		MCL_LOG_Display(TEXT("    Equipment stack size = "), *getEnumItemName(StaticEnum<EStackSize>(), (int)UFGEquipmentDescriptor::GetStackSize(equipmentDescriptorClass)));
 
 		MCL_LOG_Display(TEXT("    Equipment class = "), *GetPathNameSafe(UFGEquipmentDescriptor::GetEquipmentClass(equipmentDescriptorClass)));
 
@@ -421,15 +420,10 @@ void UMarcioCommonLibsUtils::DumpInformation(AActor* worldContext, TSubclassOf<U
 				)
 			);
 
-		MCL_LOG_Display(TEXT("    Equipment attachment = "), *GetPathNameSafe(equipment->GetAttachment()));
-		MCL_LOG_Display(TEXT("    Equipment secondary attachment = "), *GetPathNameSafe(equipment->GetSecondaryAttachment()));
-		MCL_LOG_Display(TEXT("    Equipment slot = "), *getEnumItemName(TEXT("EEquipmentSlot"), (int)equipment->mEquipmentSlot));
+		MCL_LOG_Display(TEXT("    Equipment slot = "), *getEnumItemName(StaticEnum<EEquipmentSlot>(), (int)equipment->mEquipmentSlot));
 		MCL_LOG_Display(TEXT("    Equipment attachment socket = "), *equipment->mAttachSocket.ToString());
-		MCL_LOG_Display(TEXT("    Equipment arm animation = "), *getEnumItemName(TEXT("EArmEquipment"), (int)equipment->GetArmsAnimation()));
-		MCL_LOG_Display(TEXT("    Equipment back animation = "), *getEnumItemName(TEXT("EBackEquipment"), (int)equipment->GetBackAnimation()));
-		MCL_LOG_Display(TEXT("    Equipment equip sound = "), *GetPathNameSafe(equipment->mEquipSound));
-		MCL_LOG_Display(TEXT("    Equipment unequip sound = "), *GetPathNameSafe(equipment->mUnequipSound));
-		MCL_LOG_Display(TEXT("    Equipment widget = "), *GetPathNameSafe(equipment->mEquipmentWidget));
+		MCL_LOG_Display(TEXT("    Equipment arm animation = "), *getEnumItemName(StaticEnum<EArmEquipment>(), (int)equipment->GetArmsAnimation()));
+		MCL_LOG_Display(TEXT("    Equipment back animation = "), *getEnumItemName(StaticEnum<EBackEquipment>(), (int)equipment->GetBackAnimation()));
 		MCL_LOG_Display(TEXT("    Equipment idle pose animation = "), *GetPathNameSafe(equipment->GetIdlePoseAnimation()));
 		MCL_LOG_Display(TEXT("    Equipment idle pose animation 3p = "), *GetPathNameSafe(equipment->GetIdlePoseAnimation3p()));
 		MCL_LOG_Display(TEXT("    Equipment crouch pose animation 3p = "), *GetPathNameSafe(equipment->GetCrouchPoseAnimation3p()));
@@ -460,7 +454,7 @@ void UMarcioCommonLibsUtils::DumpInformation(AActor* worldContext, TSubclassOf<U
 
 			if (auto skeletalMesh = Cast<USkeletalMeshComponent>(component))
 			{
-				MCL_LOG_Display(TEXT("        Animation Mode = "), *getEnumItemName(TEXT("EAnimationMode"), skeletalMesh->GetAnimationMode()));
+				MCL_LOG_Display(TEXT("        Animation Mode = "), *getEnumItemName(StaticEnum<EAnimationMode::Type>(), skeletalMesh->GetAnimationMode()));
 				auto animClass = skeletalMesh->GetAnimClass();
 				MCL_LOG_Display(TEXT("        Anim Class = "), *GetPathNameSafe(animClass));
 				if (animClass)
@@ -471,9 +465,9 @@ void UMarcioCommonLibsUtils::DumpInformation(AActor* worldContext, TSubclassOf<U
 				MCL_LOG_Display(TEXT("        Global Anim Rate Scale = "), skeletalMesh->GlobalAnimRateScale);
 				MCL_LOG_Display(TEXT("        Pause Anims = "), skeletalMesh->bPauseAnims ? TEXT("true") : TEXT("false"));
 				MCL_LOG_Display(TEXT("        Use Ref Pose On Init Anim = "), skeletalMesh->bUseRefPoseOnInitAnim ? TEXT("true") : TEXT("false"));
-				MCL_LOG_Display(TEXT("        Skeletal Mesh = "), *GetPathNameSafe(skeletalMesh->SkeletalMesh));
+				MCL_LOG_Display(TEXT("        Skeletal Mesh = "), *GetPathNameSafe(skeletalMesh->GetSkinnedAsset()));
 				DumpUnknownClass(
-					skeletalMesh->SkeletalMesh,
+					skeletalMesh->GetSkinnedAsset(),
 					TEXT("        "),
 					GetNameSafe(itemDescriptorClass) + TEXT("-"),
 					TEXT("-") + component->GetName(),
@@ -507,11 +501,10 @@ AFGCharacterPlayer* UMarcioCommonLibsUtils::GetFGPlayer(UWidget* widget)
 	return Cast<AFGCharacterPlayer>(pawn);
 }
 
-FString UMarcioCommonLibsUtils::getEnumItemName(const TCHAR* name, int value)
+FString UMarcioCommonLibsUtils::getEnumItemName(UEnum* MyEnum, int value)
 {
 	FString valueStr;
 
-	auto MyEnum = FindObject<UEnum>(ANY_PACKAGE, name);
 	if (MyEnum)
 	{
 		MyEnum->AddToRoot();
