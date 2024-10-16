@@ -8,12 +8,21 @@ class MARCIOCOMMONLIBS_API ACommonInfoSubsystem : public AModSubsystem
 {
 	GENERATED_BODY()
 public:
+	ACommonInfoSubsystem();
+
 	virtual void BeginPlay() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs", DisplayName= "Get Common Info Subsystem")
-	static ACommonInfoSubsystem* Get(/*UWorld* world*/);
+	static ACommonInfoSubsystem* Get(UWorld* world);
+
+	UFUNCTION(
+		BlueprintCallable,
+		Category="MarcioCommonLibs",
+		DisplayName= "Get Common Info Subsystem",
+		Meta = (WorldContext= "WorldContextObject", HidePin= "WorldContextObject", DefaultToSelf = "WorldContextObject")
+	)
+	static ACommonInfoSubsystem* Get(class UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
 	virtual void Initialize
@@ -26,10 +35,10 @@ public:
 	);
 
 	virtual void AddClass(TSet<UClass*>& classes, const FString& classPath);
-	
+
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
 	virtual bool IsStorageTeleporter(AActor* actor, TSubclassOf<AActor> cls = nullptr);
-	
+
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
 	virtual bool IsPowerPole(AActor* actor, TSubclassOf<AActor> cls = nullptr);
 
@@ -47,16 +56,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibs")
 	virtual bool IsModularLoadBalancer(AActor* actor, TSubclassOf<AActor> cls = nullptr);
-	
+
 	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
 	virtual bool IsCounterLimiter(AActor* actor, TSubclassOf<AActor> cls = nullptr);
-	
+
 	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
 	virtual bool IsUndergroundSplitter(AActor* actor, TSubclassOf<AActor> cls = nullptr);
-	
+
 	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
 	virtual bool IsUndergroundSplitterInput(AActor* actor, TSubclassOf<AActor> cls = nullptr);
-	
+
 	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
 	virtual bool IsUndergroundSplitterOutput(AActor* actor, TSubclassOf<AActor> cls = nullptr);
 

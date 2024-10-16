@@ -17,6 +17,11 @@ ACommonInfoSubsystem* ACommonInfoSubsystem::instance = nullptr;
 
 FCriticalSection ACommonInfoSubsystem::mclCritical;
 
+ACommonInfoSubsystem::ACommonInfoSubsystem()
+{
+	ReplicationPolicy = ESubsystemReplicationPolicy::SpawnLocal;
+}
+
 void ACommonInfoSubsystem::BeginPlay()
 {
 	Super::BeginPlay();
@@ -56,9 +61,16 @@ void ACommonInfoSubsystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	instance = nullptr;
 }
 
-ACommonInfoSubsystem* ACommonInfoSubsystem::Get(/*UWorld* world*/)
+ACommonInfoSubsystem* ACommonInfoSubsystem::Get(UWorld* world)
 {
-	return instance;
+	USubsystemActorManager* SubsystemActorManager = world->GetSubsystem<USubsystemActorManager>();
+
+	return SubsystemActorManager->GetSubsystemActor<ACommonInfoSubsystem>();
+}
+
+ACommonInfoSubsystem* ACommonInfoSubsystem::Get(UObject* WorldContextObject)
+{
+	return Get(GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull));
 }
 
 void ACommonInfoSubsystem::Initialize

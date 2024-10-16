@@ -236,6 +236,11 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 					{
 						sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(connectionComponent) << EOL;
 						sb << linePrefix << TEXT("            - Relative Transform = ") << *connectionComponent->GetRelativeTransform().ToString() << EOL;
+						sb << linePrefix << TEXT("            - Is Connected = ") << (connectionComponent->IsConnected() ? TEXT("true") : TEXT("false")) << EOL;
+						sb << linePrefix << TEXT("            - Connection = ") << *GetPathNameSafe(connectionComponent->GetConnection()) << EOL;
+						sb << linePrefix << TEXT("            - Connection Owner = ") << *GetPathNameSafe(
+							connectionComponent->GetConnection() ? connectionComponent->GetConnection()->GetOwner() : nullptr
+							) << EOL;
 					}
 				}
 				else if (cppType == TEXT("UWidgetComponent*"))
