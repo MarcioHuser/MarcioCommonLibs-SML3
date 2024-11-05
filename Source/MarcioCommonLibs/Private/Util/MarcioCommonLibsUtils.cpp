@@ -23,6 +23,8 @@
 #pragma optimize("", off)
 #endif
 
+const FRegexPattern UMarcioCommonLibsUtils::indexPattern(TEXT("(\\d+)$"));
+
 void UMarcioCommonLibsUtils::DumpUnknownClass
 (
 	UObject* obj,
@@ -504,6 +506,17 @@ AFGCharacterPlayer* UMarcioCommonLibsUtils::GetFGPlayer(UWidget* widget)
 	auto pawn = owningPlayer->K2_GetPawn();
 
 	return Cast<AFGCharacterPlayer>(pawn);
+}
+
+int UMarcioCommonLibsUtils::getIndexFromName(const FString& name)
+{
+	FRegexMatcher m(indexPattern, name);
+	if (m.FindNext())
+	{
+		return FCString::Atoi(*m.GetCaptureGroup(1));
+	}
+
+	return -1;
 }
 
 FString UMarcioCommonLibsUtils::getEnumItemName(UEnum* MyEnum, int value)

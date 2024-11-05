@@ -79,7 +79,12 @@ void ACommonInfoSubsystem::Initialize
 	const TSet<TSubclassOf<UFGItemDescriptor>>& in_wildcardItemDescriptors,
 	const TSet<TSubclassOf<UFGItemDescriptor>>& in_anyUndefinedItemDescriptors,
 	const TSet<TSubclassOf<UFGItemDescriptor>>& in_overflowItemDescriptors,
-	const TSet<TSubclassOf<UFGItemDescriptor>>& in_nuclearWasteItemDescriptors
+	const TSet<TSubclassOf<UFGItemDescriptor>>& in_nuclearWasteItemDescriptors,
+	const TSet<UClass*>& in_storageContainerClasses ,
+	const TSet<UClass*>& in_powerPoleClasses,
+	const TSet<UClass*>& in_powerPoleWallClasses,
+	const TSet<UClass*>& in_powerPoleWallDoubleClasses,
+	const TSet<UClass*>& in_powerTowerClasses
 )
 {
 	instance = this;
@@ -97,23 +102,33 @@ void ACommonInfoSubsystem::Initialize
 	baseBuildableFactorySimpleProducerClass = UClass::TryFindTypeSlow<UClass>(TEXT("/Script/FactoryGame.FGBuildableFactorySimpleProducer"));
 	baseCounterLimiterClass = UClass::TryFindTypeSlow<UClass>(TEXT("/Script/CounterLimiter.CL_CounterLimiter"));
 
-	AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk1/Build_StorageContainerMk1.Build_StorageContainerMk1_C"));
-	AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk2/Build_StorageContainerMk2.Build_StorageContainerMk2_C"));
+	storageContainerClasses = in_storageContainerClasses;
 
-	AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk1/Build_PowerPoleMk1.Build_PowerPoleMk1_C"));
-	AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk2/Build_PowerPoleMk2.Build_PowerPoleMk2_C"));
-	AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk3/Build_PowerPoleMk3.Build_PowerPoleMk3_C"));
+	// AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk1/Build_StorageContainerMk1.Build_StorageContainerMk1_C"));
+	// AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk2/Build_StorageContainerMk2.Build_StorageContainerMk2_C"));
 
-	AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall.Build_PowerPoleWall_C"));
-	AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk2.Build_PowerPoleWall_Mk2_C"));
-	AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk3.Build_PowerPoleWall_Mk3_C"));
+	powerPoleClasses = in_powerPoleClasses;
+	
+	// AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk1/Build_PowerPoleMk1.Build_PowerPoleMk1_C"));
+	// AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk2/Build_PowerPoleMk2.Build_PowerPoleMk2_C"));
+	// AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk3/Build_PowerPoleMk3.Build_PowerPoleMk3_C"));
 
-	AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble.Build_PowerPoleWallDouble_C"));
-	AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk2.Build_PowerPoleWallDouble_Mk2_C"));
-	AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk3.Build_PowerPoleWallDouble_Mk3_C"));
+	powerPoleWallClasses = in_powerPoleWallClasses;
+	
+	// AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall.Build_PowerPoleWall_C"));
+	// AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk2.Build_PowerPoleWall_Mk2_C"));
+	// AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk3.Build_PowerPoleWall_Mk3_C"));
 
-	AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTower.Build_PowerTower_C"));
-	AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTowerPlatform.Build_PowerTowerPlatform_C"));
+	powerPoleWallDoubleClasses = in_powerPoleWallDoubleClasses;
+	
+	// AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble.Build_PowerPoleWallDouble_C"));
+	// AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk2.Build_PowerPoleWallDouble_Mk2_C"));
+	// AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk3.Build_PowerPoleWallDouble_Mk3_C"));
+
+	powerTowerClasses = in_powerTowerClasses;
+	
+	// AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTower.Build_PowerTower_C"));
+	// AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTowerPlatform.Build_PowerTowerPlatform_C"));
 
 	// removeTeleporterDelegate.BindDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
 

@@ -31,7 +31,12 @@ public:
 		UPARAM(DisplayName = "Wildcard Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_wildcardItemDescriptors,
 		UPARAM(DisplayName = "Any Undefined Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_anyUndefinedItemDescriptors,
 		UPARAM(DisplayName = "Overflow Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_overflowItemDescriptors,
-		UPARAM(DisplayName = "Nuclear Waste Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_nuclearWasteItemDescriptors
+		UPARAM(DisplayName = "Nuclear Waste Item Descriptor") const TSet<TSubclassOf<class UFGItemDescriptor>>& in_nuclearWasteItemDescriptors,
+		UPARAM(DisplayName = "Storage Container Class") const TSet<UClass*>& in_storageContainerClasses,
+		UPARAM(DisplayName = "Power Pole Class") const TSet<UClass*>& in_powerPoleClasses,
+		UPARAM(DisplayName = "Power Pole Wall Class") const TSet<UClass*>& in_powerPoleWallClasses,
+		UPARAM(DisplayName = "Power Pole Wall Double Class") const TSet<UClass*>& in_powerPoleWallDoubleClasses,
+		UPARAM(DisplayName = "Power Tower Class") const TSet<UClass*>& in_powerTowerClasses
 	);
 
 	virtual void AddClass(TSet<UClass*>& classes, const FString& classPath);

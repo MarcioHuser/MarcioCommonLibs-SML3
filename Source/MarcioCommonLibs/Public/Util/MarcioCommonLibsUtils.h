@@ -28,5 +28,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils", BlueprintPure)
 	static class AFGCharacterPlayer* GetFGPlayer(class UWidget* widget);
 
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils")
+	static int getIndexFromName(const FString& name);
+
 	static FString getEnumItemName(UEnum* MyEnum, int value);
+
+	const static FRegexPattern indexPattern;
 };
