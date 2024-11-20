@@ -33,5 +33,11 @@ public:
 
 	static FString getEnumItemName(UEnum* MyEnum, int value);
 
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils")
+	static class AFGBuildableTrainPlatform* getNthTrainPlatform(class AFGBuildableRailroadStation* station, int index);
+	
+	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils")
+	static void getTrainPlatformIndexes(class AFGBuildableTrainPlatform* trainPlatformCargo, TSet<int>& indexes);
+
 	const static FRegexPattern indexPattern;
 };

@@ -8,6 +8,11 @@
 #include "FGCategory.h"
 #include "FGCharacterPlayer.h"
 #include "FGFactoryConnectionComponent.h"
+#include "FGTrainPlatformConnection.h"
+#include "FGTrainStationIdentifier.h"
+#include "Buildables/FGBuildableRailroadStation.h"
+#include "Buildables/FGBuildableTrainPlatform.h"
+#include "Buildables/FGBuildableTrainPlatformCargo.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkinnedAssetCommon.h"
 #include "HAL/PlatformFileManager.h"
@@ -34,336 +39,333 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 	bool includeDateTime
 )
 {
-	if (IS_MCL_LOG_LEVEL(ELogVerbosity::Log))
+	auto& platformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	auto dumpFolder = FPaths::Combine(FPaths::ProjectDir(), TEXT("DumpedObjects"));
+
+	platformFile.CreateDirectoryTree(*dumpFolder);
+
+	static bool removePreviousFiles = true;
+	if (removePreviousFiles)
 	{
-		auto& plataformFile = FPlatformFileManager::Get().GetPlatformFile();
+		// Delete previous dump files
+		removePreviousFiles = false;
 
-		auto dumpFolder = FPaths::Combine(FPaths::ProjectDir(), TEXT("DumpedObjects"));
+		TArray<FString> foundFiles;
 
-		plataformFile.CreateDirectoryTree(*dumpFolder);
+		platformFile.FindFiles(foundFiles, *dumpFolder, TEXT("txt"));
 
-		static bool removePreviousFiles = true;
-		if (removePreviousFiles)
+		for (auto file : foundFiles)
 		{
-			// Delete previous dump files
-			removePreviousFiles = false;
+			platformFile.DeleteFile(*file);
+		}
+	}
 
-			TArray<FString> foundFiles;
+	auto baseFileName = filePrefix + obj->GetName() + (includeDateTime ? FDateTime::Now().ToString(TEXT("-%Y%m%d_%H%M%S")) : TEXT("")) + fileSuffix;
 
-			plataformFile.FindFiles(foundFiles, *dumpFolder, TEXT("txt"));
+	auto dumpFile = FPaths::Combine(
+		dumpFolder,
+		baseFileName + TEXT(".txt")
+		);
 
-			for (auto file : foundFiles)
+	if (!fileSuffix.IsEmpty())
+	{
+		for (auto x = 1; platformFile.FileExists(*dumpFile); x++)
+		{
+			dumpFile = FPaths::Combine(dumpFolder, baseFileName + TEXT("-") + FString::FromInt(x) + TEXT(".txt"));
+		}
+	}
+
+	FStringBuilderBase sb;
+
+	auto EOL = TEXT("\n");
+
+	sb << linePrefix << TEXT("Object ") << *obj->GetPathName() << EOL;
+	sb << linePrefix << TEXT("Class ") << *obj->GetClass()->GetPathName() << EOL;
+
+	for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
+	{
+		sb << linePrefix << TEXT("    - Super: ") << *cls->GetPathName() << EOL;
+	}
+
+	sb << linePrefix << TEXT("Properties") << EOL;
+
+	for (TFieldIterator<FProperty> property(obj->GetClass()); property; ++property)
+	{
+		auto floatProperty = CastField<FFloatProperty>(*property);
+		auto doubleProperty = CastField<FDoubleProperty>(*property);
+		auto intProperty = CastField<FIntProperty>(*property);
+		auto boolProperty = CastField<FBoolProperty>(*property);
+		auto structProperty = CastField<FStructProperty>(*property);
+		auto strProperty = CastField<FStrProperty>(*property);
+		auto textProperty = CastField<FTextProperty>(*property);
+		auto classProperty = CastField<FClassProperty>(*property);
+		auto objectProperty = CastField<FObjectProperty>(*property);
+		auto weakObjectProperty = CastField<FWeakObjectProperty>(*property);
+		auto arrayProperty = CastField<FArrayProperty>(*property);
+		auto byteProperty = CastField<FByteProperty>(*property);
+		auto nameProperty = CastField<FNameProperty>(*property);
+		auto enumProperty = CastField<FEnumProperty>(*property);
+
+		FString cppType;
+		FString cppTypeForward;
+		FString cppExtendedType;
+
+		if (floatProperty ||
+			doubleProperty ||
+			intProperty ||
+			boolProperty ||
+			structProperty ||
+			strProperty ||
+			textProperty ||
+			classProperty ||
+			(objectProperty && objectProperty->PropertyClass) ||
+			(weakObjectProperty && weakObjectProperty->PropertyClass) ||
+			arrayProperty ||
+			byteProperty ||
+			nameProperty ||
+			enumProperty
+			)
+		{
+			cppType = property->GetCPPType(&cppExtendedType);
+			cppTypeForward = property->GetCPPTypeForwardDeclaration();
+		}
+		else
+		{
+			cppType = TEXT("<<Unknown>>");
+		}
+
+		sb << linePrefix <<
+			TEXT("    - ") <<
+			*property->GetName() <<
+			TEXT(" (") <<
+			*cppType <<
+			*(!cppExtendedType.IsEmpty() ? cppExtendedType : TEXT("")) <<
+			*(!cppTypeForward.IsEmpty() ? TEXT(" / Forward = ") + cppTypeForward : TEXT("")) <<
+			TEXT(" / ") <<
+			*property->GetClass()->GetName() <<
+			TEXT(" / RepIndex = ") <<
+			property->RepIndex <<
+			TEXT(")") <<
+			EOL;
+
+		if (floatProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << *FText::AsNumber(floatProperty->GetPropertyValue_InContainer(obj)).ToString() << EOL;
+		}
+		else if (doubleProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << *FText::AsNumber(doubleProperty->GetPropertyValue_InContainer(obj)).ToString() << EOL;
+		}
+		else if (intProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << intProperty->GetPropertyValue_InContainer(obj) << EOL;
+		}
+		else if (byteProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << byteProperty->GetPropertyValue_InContainer(obj) << EOL;
+		}
+		else if (boolProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << (boolProperty->GetPropertyValue_InContainer(obj) ? TEXT("true") : TEXT("false")) << EOL;
+		}
+		else if (structProperty)
+		{
+			if (cppType == TEXT("FFactoryTickFunction"))
 			{
-				plataformFile.DeleteFile(*file);
+				auto factoryTick = structProperty->ContainerPtrToValuePtr<FFactoryTickFunction>(obj);
+				if (factoryTick)
+				{
+					sb << linePrefix << TEXT("        - Tick Interval = ") << FText::AsNumber(factoryTick->TickInterval).ToString() << EOL;
+				}
+			}
+			else if (cppType == TEXT("FVector"))
+			{
+				auto vector = structProperty->ContainerPtrToValuePtr<FVector>(obj);
+				if (vector)
+				{
+					sb << linePrefix << TEXT("        - = ") << *vector->ToString() << EOL;
+				}
+			}
+			else if (cppType == TEXT("FRotator"))
+			{
+				auto rotator = structProperty->ContainerPtrToValuePtr<FRotator>(obj);
+				if (rotator)
+				{
+					sb << linePrefix << TEXT("        - = ") << *rotator->ToString() << EOL;
+				}
 			}
 		}
-
-		auto baseFileName = filePrefix + obj->GetName() + (includeDateTime ? FDateTime::Now().ToString(TEXT("-%Y%m%d_%H%M%S")) : TEXT("")) + fileSuffix;
-
-		auto dumpFile = FPaths::Combine(
-			dumpFolder,
-			baseFileName + TEXT(".txt")
-			);
-
-		if (!fileSuffix.IsEmpty())
+		else if (strProperty)
 		{
-			for (auto x = 1; plataformFile.FileExists(*dumpFile); x++)
+			sb << linePrefix << TEXT("        = ") << *strProperty->GetPropertyValue_InContainer(obj) << EOL;
+		}
+		else if (textProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << *textProperty->GetPropertyValue_InContainer(obj).ToString() << EOL;
+		}
+		else if (nameProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << *nameProperty->GetPropertyValue_InContainer(obj).ToString() << EOL;
+		}
+		else if (classProperty)
+		{
+			sb << linePrefix << TEXT("        = ") << *GetNameSafe(classProperty->GetPropertyValue_InContainer(obj)) << EOL;
+		}
+		else if (objectProperty)
+		{
+			if (cppType == TEXT("TObjectPtr<USkeletalMesh>"))
 			{
-				dumpFile = FPaths::Combine(dumpFolder, baseFileName + TEXT("-") + FString::FromInt(x) + TEXT(".txt"));
+				auto skeletalMeshPtr = objectProperty->ContainerPtrToValuePtr<TObjectPtr<USkeletalMesh>>(obj);
+				if (skeletalMeshPtr)
+				{
+					auto skeletalMesh = *skeletalMeshPtr;
+
+					sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(skeletalMesh.Get()) << EOL;
+				}
 			}
-		}
-
-		FStringBuilderBase sb;
-
-		auto EOL = TEXT("\n");
-
-		sb << linePrefix << TEXT("Object ") << *obj->GetPathName() << EOL;
-		sb << linePrefix << TEXT("Class ") << *obj->GetClass()->GetPathName() << EOL;
-
-		for (auto cls = obj->GetClass()->GetSuperClass(); cls && cls != AActor::StaticClass(); cls = cls->GetSuperClass())
-		{
-			sb << linePrefix << TEXT("    - Super: ") << *cls->GetPathName() << EOL;
-		}
-
-		sb << linePrefix << TEXT("Properties") << EOL;
-
-		for (TFieldIterator<FProperty> property(obj->GetClass()); property; ++property)
-		{
-			auto floatProperty = CastField<FFloatProperty>(*property);
-			auto doubleProperty = CastField<FDoubleProperty>(*property);
-			auto intProperty = CastField<FIntProperty>(*property);
-			auto boolProperty = CastField<FBoolProperty>(*property);
-			auto structProperty = CastField<FStructProperty>(*property);
-			auto strProperty = CastField<FStrProperty>(*property);
-			auto textProperty = CastField<FTextProperty>(*property);
-			auto classProperty = CastField<FClassProperty>(*property);
-			auto objectProperty = CastField<FObjectProperty>(*property);
-			auto weakObjectProperty = CastField<FWeakObjectProperty>(*property);
-			auto arrayProperty = CastField<FArrayProperty>(*property);
-			auto byteProperty = CastField<FByteProperty>(*property);
-			auto nameProperty = CastField<FNameProperty>(*property);
-			auto enumProperty = CastField<FEnumProperty>(*property);
-
-			FString cppType;
-			FString cppTypeForward;
-			FString cppExtendedType;
-
-			if (floatProperty ||
-				doubleProperty ||
-				intProperty ||
-				boolProperty ||
-				structProperty ||
-				strProperty ||
-				textProperty ||
-				classProperty ||
-				(objectProperty && objectProperty->PropertyClass) ||
-				(weakObjectProperty && weakObjectProperty->PropertyClass) ||
-				arrayProperty ||
-				byteProperty ||
-				nameProperty ||
-				enumProperty
-				)
+			else if (cppType == TEXT("UStaticMesh*"))
 			{
-				cppType = property->GetCPPType(&cppExtendedType);
-				cppTypeForward = property->GetCPPTypeForwardDeclaration();
+				auto staticMeshPtr = objectProperty->ContainerPtrToValuePtr<UStaticMesh*>(obj);
+				auto staticMesh = GetValid(*staticMeshPtr);
+				if (staticMesh)
+				{
+					sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(staticMesh) << EOL;
+				}
+			}
+			else if (cppType == TEXT("UFGFactoryConnectionComponent*"))
+			{
+				auto connectionComponentPtr = objectProperty->ContainerPtrToValuePtr<UFGFactoryConnectionComponent*>(obj);
+				auto connectionComponent = GetValid(*connectionComponentPtr);
+				if (connectionComponent)
+				{
+					sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(connectionComponent) << EOL;
+					sb << linePrefix << TEXT("            - Relative Transform = ") << *connectionComponent->GetRelativeTransform().ToString() << EOL;
+					sb << linePrefix << TEXT("            - Is Connected = ") << (connectionComponent->IsConnected() ? TEXT("true") : TEXT("false")) << EOL;
+					sb << linePrefix << TEXT("            - Connection = ") << *GetPathNameSafe(connectionComponent->GetConnection()) << EOL;
+					sb << linePrefix << TEXT("            - Connection Owner = ") << *GetPathNameSafe(
+						connectionComponent->GetConnection() ? connectionComponent->GetConnection()->GetOwner() : nullptr
+						) << EOL;
+				}
+			}
+			else if (cppType == TEXT("UWidgetComponent*"))
+			{
+				auto widgetComponentPtr = objectProperty->ContainerPtrToValuePtr<UWidgetComponent*>(obj);
+				auto widgetComponent = GetValid(*widgetComponentPtr);
+				if (widgetComponent)
+				{
+					sb << linePrefix << TEXT("            - ") << *GetPathNameSafe(widgetComponent->GetClass()) << EOL;
+				}
 			}
 			else
 			{
-				cppType = TEXT("<<Unknown>>");
-			}
+				UObject* objValue = nullptr;
 
-			sb << linePrefix <<
-				TEXT("    - ") <<
-				*property->GetName() <<
-				TEXT(" (") <<
-				*cppType <<
-				*(!cppExtendedType.IsEmpty() ? cppExtendedType : TEXT("")) <<
-				*(!cppTypeForward.IsEmpty() ? TEXT(" / Forward = ") + cppTypeForward : TEXT("")) <<
-				TEXT(" / ") <<
-				*property->GetClass()->GetName() <<
-				TEXT(" / RepIndex = ") <<
-				property->RepIndex <<
-				TEXT(")") <<
-				EOL;
-
-			if (floatProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << *FText::AsNumber(floatProperty->GetPropertyValue_InContainer(obj)).ToString() << EOL;
-			}
-			else if (doubleProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << *FText::AsNumber(doubleProperty->GetPropertyValue_InContainer(obj)).ToString() << EOL;
-			}
-			else if (intProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << intProperty->GetPropertyValue_InContainer(obj) << EOL;
-			}
-			else if (byteProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << byteProperty->GetPropertyValue_InContainer(obj) << EOL;
-			}
-			else if (boolProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << (boolProperty->GetPropertyValue_InContainer(obj) ? TEXT("true") : TEXT("false")) << EOL;
-			}
-			else if (structProperty)
-			{
-				if (cppType == TEXT("FFactoryTickFunction"))
+				if (objectProperty->GetName() == TEXT("Prop1"))
 				{
-					auto factoryTick = structProperty->ContainerPtrToValuePtr<FFactoryTickFunction>(obj);
-					if (factoryTick)
+					auto actorPtr = objectProperty->ContainerPtrToValuePtr<UObject*>(obj);
+					if (actorPtr)
 					{
-						sb << linePrefix << TEXT("        - Tick Interval = ") << FText::AsNumber(factoryTick->TickInterval).ToString() << EOL;
+						objValue = *actorPtr;
 					}
 				}
-				else if (cppType == TEXT("FVector"))
+				else if (objectProperty->GetName() == TEXT("Prop1"))
 				{
-					auto vector = structProperty->ContainerPtrToValuePtr<FVector>(obj);
-					if (vector)
-					{
-						sb << linePrefix << TEXT("        - = ") << *vector->ToString() << EOL;
-					}
+					objValue = objectProperty->ContainerPtrToValuePtr<UObject>(obj);
 				}
-				else if (cppType == TEXT("FRotator"))
+
+				objValue = GetValid(objValue);
+
+				if (objValue)
 				{
-					auto rotator = structProperty->ContainerPtrToValuePtr<FRotator>(obj);
-					if (rotator)
-					{
-						sb << linePrefix << TEXT("        - = ") << *rotator->ToString() << EOL;
-					}
+					sb << linePrefix << TEXT("            - ") << *GetPathNameSafe(objValue) << EOL;
 				}
-			}
-			else if (strProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << *strProperty->GetPropertyValue_InContainer(obj) << EOL;
-			}
-			else if (textProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << *textProperty->GetPropertyValue_InContainer(obj).ToString() << EOL;
-			}
-			else if (nameProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << *nameProperty->GetPropertyValue_InContainer(obj).ToString() << EOL;
-			}
-			else if (classProperty)
-			{
-				sb << linePrefix << TEXT("        = ") << *GetNameSafe(classProperty->GetPropertyValue_InContainer(obj)) << EOL;
-			}
-			else if (objectProperty)
-			{
-				if (cppType == TEXT("TObjectPtr<USkeletalMesh>"))
-				{
-					auto skeletalMeshPtr = objectProperty->ContainerPtrToValuePtr<TObjectPtr<USkeletalMesh>>(obj);
-					if (skeletalMeshPtr)
-					{
-						auto skeletalMesh = *skeletalMeshPtr;
-
-						sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(skeletalMesh.Get()) << EOL;
-					}
-				}
-				else if (cppType == TEXT("UStaticMesh*"))
-				{
-					auto staticMeshPtr = objectProperty->ContainerPtrToValuePtr<UStaticMesh*>(obj);
-					auto staticMesh = GetValid(*staticMeshPtr);
-					if (staticMesh)
-					{
-						sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(staticMesh) << EOL;
-					}
-				}
-				else if (cppType == TEXT("UFGFactoryConnectionComponent*"))
-				{
-					auto connectionComponentPtr = objectProperty->ContainerPtrToValuePtr<UFGFactoryConnectionComponent*>(obj);
-					auto connectionComponent = GetValid(*connectionComponentPtr);
-					if (connectionComponent)
-					{
-						sb << linePrefix << TEXT("        = ") << *GetPathNameSafe(connectionComponent) << EOL;
-						sb << linePrefix << TEXT("            - Relative Transform = ") << *connectionComponent->GetRelativeTransform().ToString() << EOL;
-						sb << linePrefix << TEXT("            - Is Connected = ") << (connectionComponent->IsConnected() ? TEXT("true") : TEXT("false")) << EOL;
-						sb << linePrefix << TEXT("            - Connection = ") << *GetPathNameSafe(connectionComponent->GetConnection()) << EOL;
-						sb << linePrefix << TEXT("            - Connection Owner = ") << *GetPathNameSafe(
-							connectionComponent->GetConnection() ? connectionComponent->GetConnection()->GetOwner() : nullptr
-							) << EOL;
-					}
-				}
-				else if (cppType == TEXT("UWidgetComponent*"))
-				{
-					auto widgetComponentPtr = objectProperty->ContainerPtrToValuePtr<UWidgetComponent*>(obj);
-					auto widgetComponent = GetValid(*widgetComponentPtr);
-					if (widgetComponent)
-					{
-						sb << linePrefix << TEXT("            - ") << *GetPathNameSafe(widgetComponent->GetClass()) << EOL;
-					}
-				}
-				else
-				{
-					UObject* objValue = nullptr;
-
-					if (objectProperty->GetName() == TEXT("Prop1"))
-					{
-						auto actorPtr = objectProperty->ContainerPtrToValuePtr<UObject*>(obj);
-						if (actorPtr)
-						{
-							objValue = *actorPtr;
-						}
-					}
-					else if (objectProperty->GetName() == TEXT("Prop1"))
-					{
-						objValue = objectProperty->ContainerPtrToValuePtr<UObject>(obj);
-					}
-
-					objValue = GetValid(objValue);
-
-					if (objValue)
-					{
-						sb << linePrefix << TEXT("            - ") << *GetPathNameSafe(objValue) << EOL;
-					}
-				}
-			}
-			else if (arrayProperty)
-			{
-				FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
-
-				auto innerCppType = arrayProperty->Inner->GetCPPType();
-
-				sb << linePrefix << TEXT("        - CPPTypeForwardDeclaration = ") << arrayProperty->GetCPPTypeForwardDeclaration() << EOL;
-				sb << linePrefix << TEXT("        - Num = ") << arrayHelper.Num() << EOL;
-				sb << linePrefix << TEXT("        - Inner Type = ") << *innerCppType << EOL;
-
-				if (innerCppType == TEXT("FSkeletalMaterial"))
-				{
-					auto array = arrayProperty->ContainerPtrToValuePtr<TArray<FSkeletalMaterial>>(obj);
-
-					if (array)
-					{
-						for (const auto& x : *array)
-						{
-							sb << linePrefix <<
-								TEXT("            - Material Slot Name = ") <<
-								x.MaterialSlotName << TEXT(" / Material Interface = ") <<
-								GetFullNameSafe(x.MaterialInterface) <<
-								EOL;
-						}
-					}
-				}
-				else if (auto arrayObjectProperty = CastField<FObjectProperty>(arrayProperty->Inner))
-				{
-					for (auto x = 0; x < arrayHelper.Num(); x++)
-					{
-						void* ObjectContainer = arrayHelper.GetRawPtr(x);
-						auto Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
-						sb << linePrefix <<
-							TEXT("            - ") <<
-							x <<
-							TEXT(" = ") <<
-							*GetPathNameSafe(Object) <<
-							TEXT(" (") <<
-							*GetPathNameSafe(Object ? Object->GetClass() : nullptr) <<
-							TEXT(" )") <<
-							EOL;
-					}
-				}
-				else if (auto arrayWeakObjectProperty = CastField<FWeakObjectProperty>(arrayProperty->Inner))
-				{
-					for (auto x = 0; x < arrayHelper.Num(); x++)
-					{
-						void* ObjectContainer = arrayHelper.GetRawPtr(x);
-						auto Object = arrayWeakObjectProperty->GetObjectPropertyValue(ObjectContainer);
-
-						sb << linePrefix <<
-							TEXT("            - ") <<
-							x <<
-							TEXT(" = ") <<
-							*GetPathNameSafe(Object) <<
-							TEXT(" (") <<
-							*GetPathNameSafe(Object ? Object->GetClass() : nullptr) <<
-							TEXT(" )") <<
-							EOL;
-					}
-				}
-			}
-			else if (enumProperty)
-			{
-				const auto objReflection = UBlueprintReflectionLibrary::ReflectObject(obj);
-
-				const auto reflectedValue = objReflection.GetEnumProperty(FName(property->GetName()));
-
-				auto currentValue = reflectedValue.GetCurrentValue();
-				auto enumType = enumProperty->GetEnum();
-
-				sb << linePrefix <<
-					TEXT("        = ") <<
-					currentValue <<
-					TEXT(" (") <<
-					*(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString() <<
-					TEXT(")") <<
-					EOL;
 			}
 		}
+		else if (arrayProperty)
+		{
+			FScriptArrayHelper arrayHelper(arrayProperty, arrayProperty->ContainerPtrToValuePtr<void>(obj));
 
-		sb << linePrefix << TEXT("====") << EOL;
+			auto innerCppType = arrayProperty->Inner->GetCPPType();
 
-		FFileHelper::SaveStringToFile(sb.ToString(), *dumpFile, FFileHelper::EEncodingOptions::ForceUTF8);
+			sb << linePrefix << TEXT("        - CPPTypeForwardDeclaration = ") << arrayProperty->GetCPPTypeForwardDeclaration() << EOL;
+			sb << linePrefix << TEXT("        - Num = ") << arrayHelper.Num() << EOL;
+			sb << linePrefix << TEXT("        - Inner Type = ") << *innerCppType << EOL;
+
+			if (innerCppType == TEXT("FSkeletalMaterial"))
+			{
+				auto array = arrayProperty->ContainerPtrToValuePtr<TArray<FSkeletalMaterial>>(obj);
+
+				if (array)
+				{
+					for (const auto& x : *array)
+					{
+						sb << linePrefix <<
+							TEXT("            - Material Slot Name = ") <<
+							x.MaterialSlotName << TEXT(" / Material Interface = ") <<
+							GetFullNameSafe(x.MaterialInterface) <<
+							EOL;
+					}
+				}
+			}
+			else if (auto arrayObjectProperty = CastField<FObjectProperty>(arrayProperty->Inner))
+			{
+				for (auto x = 0; x < arrayHelper.Num(); x++)
+				{
+					void* ObjectContainer = arrayHelper.GetRawPtr(x);
+					auto Object = arrayObjectProperty->GetObjectPropertyValue(ObjectContainer);
+					sb << linePrefix <<
+						TEXT("            - ") <<
+						x <<
+						TEXT(" = ") <<
+						*GetPathNameSafe(Object) <<
+						TEXT(" (") <<
+						*GetPathNameSafe(Object ? Object->GetClass() : nullptr) <<
+						TEXT(" )") <<
+						EOL;
+				}
+			}
+			else if (auto arrayWeakObjectProperty = CastField<FWeakObjectProperty>(arrayProperty->Inner))
+			{
+				for (auto x = 0; x < arrayHelper.Num(); x++)
+				{
+					void* ObjectContainer = arrayHelper.GetRawPtr(x);
+					auto Object = arrayWeakObjectProperty->GetObjectPropertyValue(ObjectContainer);
+
+					sb << linePrefix <<
+						TEXT("            - ") <<
+						x <<
+						TEXT(" = ") <<
+						*GetPathNameSafe(Object) <<
+						TEXT(" (") <<
+						*GetPathNameSafe(Object ? Object->GetClass() : nullptr) <<
+						TEXT(" )") <<
+						EOL;
+				}
+			}
+		}
+		else if (enumProperty)
+		{
+			const auto objReflection = UBlueprintReflectionLibrary::ReflectObject(obj);
+
+			const auto reflectedValue = objReflection.GetEnumProperty(FName(property->GetName()));
+
+			auto currentValue = reflectedValue.GetCurrentValue();
+			auto enumType = enumProperty->GetEnum();
+
+			sb << linePrefix <<
+				TEXT("        = ") <<
+				currentValue <<
+				TEXT(" (") <<
+				*(enumType ? enumType->GetNameByValue(currentValue) : NAME_None).ToString() <<
+				TEXT(")") <<
+				EOL;
+		}
 	}
+
+	sb << linePrefix << TEXT("====") << EOL;
+
+	FFileHelper::SaveStringToFile(sb.ToString(), *dumpFile, FFileHelper::EEncodingOptions::ForceUTF8);
 }
 
 class AActor* UMarcioCommonLibsUtils::GetHitActor(const FHitResult& hit)
@@ -535,6 +537,111 @@ FString UMarcioCommonLibsUtils::getEnumItemName(UEnum* MyEnum, int value)
 	}
 
 	return FString::Printf(TEXT("%s (%d)"), *valueStr, value);
+}
+
+AFGBuildableTrainPlatform* UMarcioCommonLibsUtils::getNthTrainPlatform(AFGBuildableRailroadStation* station, int index)
+{
+	for (auto i = 0; i <= 1; i++)
+	{
+		auto offsetDistance = 1;
+
+		TSet<AFGBuildableTrainPlatform*> seenPlatforms;
+
+		auto platformConnection = station->GetStationOutputConnection();
+		if (i)
+		{
+			platformConnection = station->GetConnectionInOppositeDirection(platformConnection);
+		}
+
+		for (platformConnection = platformConnection->GetConnectedTo();
+		     platformConnection;
+		     platformConnection = platformConnection->GetPlatformOwner()->GetConnectionInOppositeDirection(platformConnection)->GetConnectedTo(),
+		     ++offsetDistance)
+		{
+			auto connectedPlatform = platformConnection->GetPlatformOwner();
+
+			if (seenPlatforms.Contains(connectedPlatform))
+			{
+				// Loop detected
+				break;
+			}
+
+			seenPlatforms.Add(connectedPlatform);
+
+			auto adjustedOffsetDistance = i ? -offsetDistance : offsetDistance;
+
+			if (index != adjustedOffsetDistance)
+			{
+				// Not on a valid offset. Skip
+				continue;
+			}
+
+			return connectedPlatform;
+		}
+	}
+
+	return nullptr;
+}
+
+void UMarcioCommonLibsUtils::getTrainPlatformIndexes(AFGBuildableTrainPlatform* trainPlatformCargo, TSet<int>& indexes)
+{
+	TSet<AFGBuildableRailroadStation*> destinationStations;
+
+	for (auto i = 0; i <= 1; i++)
+	{
+		auto offsetDistance = 1;
+
+		TSet<AFGBuildableTrainPlatform*> seenPlatforms;
+
+		TInlineComponentArray<UFGTrainPlatformConnection*> railComponents;
+		trainPlatformCargo->GetComponents(railComponents);
+
+		for (auto platformConnection = railComponents[i]->GetConnectedTo();
+		     platformConnection;
+		     platformConnection = platformConnection->GetPlatformOwner()->GetConnectionInOppositeDirection(platformConnection)->GetConnectedTo(),
+		     ++offsetDistance)
+		{
+			auto connectedPlatform = platformConnection->GetPlatformOwner();
+
+			if (seenPlatforms.Contains(connectedPlatform))
+			{
+				// Loop detected
+				break;
+			}
+
+			seenPlatforms.Add(connectedPlatform);
+
+			MCL_LOG_Display_Condition(
+				*connectedPlatform->GetName(),
+				TEXT(" direction = "),
+				i,
+				TEXT(" / orientation reversed = "),
+				connectedPlatform->IsOrientationReversed() ? TEXT("true") : TEXT("false")
+				);
+
+			auto station = Cast<AFGBuildableRailroadStation>(connectedPlatform);
+			if (station)
+			{
+				destinationStations.Add(station);
+
+				MCL_LOG_Display_Condition(
+					TEXT("    Station = "),
+					*station->GetStationIdentifier()->GetStationName().ToString()
+					);
+
+				if (platformConnection == station->GetStationOutputConnection())
+				{
+					indexes.Add(offsetDistance);
+					MCL_LOG_Display_Condition(TEXT("        offset distance = "), offsetDistance);
+				}
+				else
+				{
+					indexes.Add(-offsetDistance);
+					MCL_LOG_Display_Condition(TEXT("        offset distance = "), -offsetDistance);
+				}
+			}
+		}
+	}
 }
 
 

@@ -25,8 +25,6 @@ ACommonInfoSubsystem::ACommonInfoSubsystem()
 void ACommonInfoSubsystem::BeginPlay()
 {
 	Super::BeginPlay();
-
-	instance = this;
 }
 
 void ACommonInfoSubsystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -80,7 +78,7 @@ void ACommonInfoSubsystem::Initialize
 	const TSet<TSubclassOf<UFGItemDescriptor>>& in_anyUndefinedItemDescriptors,
 	const TSet<TSubclassOf<UFGItemDescriptor>>& in_overflowItemDescriptors,
 	const TSet<TSubclassOf<UFGItemDescriptor>>& in_nuclearWasteItemDescriptors,
-	const TSet<UClass*>& in_storageContainerClasses ,
+	const TSet<UClass*>& in_storageContainerClasses,
 	const TSet<UClass*>& in_powerPoleClasses,
 	const TSet<UClass*>& in_powerPoleWallClasses,
 	const TSet<UClass*>& in_powerPoleWallDoubleClasses,
@@ -108,25 +106,25 @@ void ACommonInfoSubsystem::Initialize
 	// AddClass(storageContainerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk2/Build_StorageContainerMk2.Build_StorageContainerMk2_C"));
 
 	powerPoleClasses = in_powerPoleClasses;
-	
+
 	// AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk1/Build_PowerPoleMk1.Build_PowerPoleMk1_C"));
 	// AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk2/Build_PowerPoleMk2.Build_PowerPoleMk2_C"));
 	// AddClass(powerPoleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk3/Build_PowerPoleMk3.Build_PowerPoleMk3_C"));
 
 	powerPoleWallClasses = in_powerPoleWallClasses;
-	
+
 	// AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall.Build_PowerPoleWall_C"));
 	// AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk2.Build_PowerPoleWall_Mk2_C"));
 	// AddClass(powerPoleWallClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Build_PowerPoleWall_Mk3.Build_PowerPoleWall_Mk3_C"));
 
 	powerPoleWallDoubleClasses = in_powerPoleWallDoubleClasses;
-	
+
 	// AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble.Build_PowerPoleWallDouble_C"));
 	// AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk2.Build_PowerPoleWallDouble_Mk2_C"));
 	// AddClass(powerPoleWallDoubleClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWallDouble/Build_PowerPoleWallDouble_Mk3.Build_PowerPoleWallDouble_Mk3_C"));
 
 	powerTowerClasses = in_powerTowerClasses;
-	
+
 	// AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTower.Build_PowerTower_C"));
 	// AddClass(powerTowerClasses, TEXT("/Game/FactoryGame/Buildable/Factory/PowerTower/Build_PowerTowerPlatform.Build_PowerTowerPlatform_C"));
 
@@ -136,7 +134,7 @@ void ACommonInfoSubsystem::Initialize
 
 	if (buildableSubsystem)
 	{
-		buildableSubsystem->BuildableConstructedGlobalDelegate.AddDynamic(this, &ACommonInfoSubsystem::handleBuildableConstructed);
+		// buildableSubsystem->BuildableConstructedGlobalDelegate.AddDynamic(this, &ACommonInfoSubsystem::handleBuildableConstructed);
 
 		FScopeLock ScopeLock(&mclCritical);
 
@@ -148,6 +146,31 @@ void ACommonInfoSubsystem::Initialize
 			IsValidBuildable(Cast<AFGBuildable>(buildableActor));
 		}
 	}
+
+#if UE_BUILD_SHIPPING
+	static auto hooked = false;
+
+	if (!hooked)
+	{
+		hooked = true;
+
+		{
+			auto ObjectInstance = GetMutableDefault<AFGBuildableFactory>();
+
+			SUBSCRIBE_METHOD_VIRTUAL_AFTER(
+				AFGBuildableFactory::BeginPlay,
+				ObjectInstance,
+				[](AFGBuildableFactory* self)
+				{
+				if(instance)
+				{
+				instance->handleBuildableConstructed(self);
+				}
+				}
+				);
+		}
+	}
+#endif
 
 	initialized = true;
 }
@@ -302,9 +325,13 @@ bool ACommonInfoSubsystem::IsValidBuildable(AFGBuildable* newBuildable)
 void ACommonInfoSubsystem::addTeleporter(AFGBuildableFactory* teleporter)
 {
 	FScopeLock ScopeLock(&mclCritical);
-	allTeleporters.Add(teleporter);
 
-	teleporter->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
+	if (!allTeleporters.Contains(teleporter))
+	{
+		allTeleporters.Add(teleporter);
+
+		teleporter->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
+	}
 }
 
 void ACommonInfoSubsystem::removeTeleporter(AActor* teleporter, EEndPlayReason::Type reason)
@@ -318,9 +345,13 @@ void ACommonInfoSubsystem::removeTeleporter(AActor* teleporter, EEndPlayReason::
 void ACommonInfoSubsystem::addUndergroundInputBelt(AFGBuildableStorage* undergroundInputBelt)
 {
 	FScopeLock ScopeLock(&ACommonInfoSubsystem::mclCritical);
-	allUndergroundInputBelts.Add(undergroundInputBelt);
 
-	undergroundInputBelt->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeUndergroundInputBelt);
+	if (!allUndergroundInputBelts.Contains(undergroundInputBelt))
+	{
+		allUndergroundInputBelts.Add(undergroundInputBelt);
+
+		undergroundInputBelt->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeUndergroundInputBelt);
+	}
 }
 
 void ACommonInfoSubsystem::removeUndergroundInputBelt(AActor* undergroundInputBelt, EEndPlayReason::Type reason)

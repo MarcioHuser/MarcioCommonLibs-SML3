@@ -3,6 +3,9 @@
 
 #include "MarcioCommonLibsModule.h"
 #include "Util/MCLOptimize.h"
+#include "Buildables/FGBuildableFactory.h"
+#include "Patching/NativeHookManager.h"
+#include "Subsystems/CommonInfoSubsystem.h"
 
 void FMarcioCommonLibsModule::StartupModule()
 {
