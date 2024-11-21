@@ -35,9 +35,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils")
 	static class AFGBuildableTrainPlatform* getNthTrainPlatform(class AFGBuildableRailroadStation* station, int index);
-	
+
 	UFUNCTION(BlueprintCallable, Category="MarcioCommonLibsUtils")
-	static void getTrainPlatformIndexes(class AFGBuildableTrainPlatform* trainPlatformCargo, TSet<int>& indexes);
+	static void getTrainPlatformIndexes(class AFGBuildableTrainPlatform* trainPlatformCargo, TSet<int>& indexes, TSet<AFGBuildableRailroadStation*>& destinationStations);
 
 	const static FRegexPattern indexPattern;
 };

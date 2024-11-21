@@ -583,10 +583,8 @@ AFGBuildableTrainPlatform* UMarcioCommonLibsUtils::getNthTrainPlatform(AFGBuilda
 	return nullptr;
 }
 
-void UMarcioCommonLibsUtils::getTrainPlatformIndexes(AFGBuildableTrainPlatform* trainPlatformCargo, TSet<int>& indexes)
+void UMarcioCommonLibsUtils::getTrainPlatformIndexes(AFGBuildableTrainPlatform* trainPlatformCargo, TSet<int>& indexes, TSet<AFGBuildableRailroadStation*>& destinationStations)
 {
-	TSet<AFGBuildableRailroadStation*> destinationStations;
-
 	for (auto i = 0; i <= 1; i++)
 	{
 		auto offsetDistance = 1;
