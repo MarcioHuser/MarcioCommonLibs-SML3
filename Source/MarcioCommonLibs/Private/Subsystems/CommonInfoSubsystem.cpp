@@ -134,7 +134,8 @@ void ACommonInfoSubsystem::Initialize
 
 	if (buildableSubsystem)
 	{
-		// buildableSubsystem->BuildableConstructedGlobalDelegate.AddDynamic(this, &ACommonInfoSubsystem::handleBuildableConstructed);
+		buildableSubsystem->mBuildableAddedDelegate.AddDynamic(this, &ACommonInfoSubsystem::handleBuildableConstructed);
+		buildableSubsystem->mBuildableRemovedDelegate.AddDynamic(this, &ACommonInfoSubsystem::handleBuildableRemoved);
 
 		FScopeLock ScopeLock(&mclCritical);
 
@@ -147,30 +148,30 @@ void ACommonInfoSubsystem::Initialize
 		}
 	}
 
-#if UE_BUILD_SHIPPING
-	static auto hooked = false;
-
-	if (!hooked)
-	{
-		hooked = true;
-
-		{
-			auto ObjectInstance = GetMutableDefault<AFGBuildableFactory>();
-
-			SUBSCRIBE_METHOD_VIRTUAL_AFTER(
-				AFGBuildableFactory::BeginPlay,
-				ObjectInstance,
-				[](AFGBuildableFactory* self)
-				{
-				if(instance)
-				{
-				instance->handleBuildableConstructed(self);
-				}
-				}
-				);
-		}
-	}
-#endif
+	// #if UE_BUILD_SHIPPING
+	// 	static auto hooked = false;
+	//
+	// 	if (!hooked)
+	// 	{
+	// 		hooked = true;
+	//
+	// 		{
+	// 			auto ObjectInstance = GetMutableDefault<AFGBuildableFactory>();
+	//
+	// 			SUBSCRIBE_METHOD_VIRTUAL_AFTER(
+	// 				AFGBuildableFactory::BeginPlay,
+	// 				ObjectInstance,
+	// 				[](AFGBuildableFactory* self)
+	// 				{
+	// 				if(instance)
+	// 				{
+	// 				instance->handleBuildableConstructed(self);
+	// 				}
+	// 				}
+	// 				);
+	// 		}
+	// 	}
+	// #endif
 
 	initialized = true;
 }
@@ -322,6 +323,29 @@ bool ACommonInfoSubsystem::IsValidBuildable(AFGBuildable* newBuildable)
 	return false;
 }
 
+void ACommonInfoSubsystem::handleBuildableRemoved(AFGBuildable* buildable)
+{
+	if (!buildable)
+	{
+		return;
+	}
+
+	if (IsUndergroundSplitterInput(buildable))
+	{
+		if (auto underGroundBelt = Cast<AFGBuildableStorage>(buildable))
+		{
+			removeUndergroundInputBelt(underGroundBelt);
+		}
+	}
+	else if (IsStorageTeleporter(buildable))
+	{
+		if (auto storageTeleporter = Cast<AFGBuildableFactory>(buildable))
+		{
+			removeTeleporter(storageTeleporter);
+		}
+	}
+}
+
 void ACommonInfoSubsystem::addTeleporter(AFGBuildableFactory* teleporter)
 {
 	FScopeLock ScopeLock(&mclCritical);
@@ -330,16 +354,16 @@ void ACommonInfoSubsystem::addTeleporter(AFGBuildableFactory* teleporter)
 	{
 		allTeleporters.Add(teleporter);
 
-		teleporter->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
+		// teleporter->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
 	}
 }
 
-void ACommonInfoSubsystem::removeTeleporter(AActor* teleporter, EEndPlayReason::Type reason)
+void ACommonInfoSubsystem::removeTeleporter(AActor* teleporter/*, EEndPlayReason::Type reason*/)
 {
 	FScopeLock ScopeLock(&mclCritical);
 	allTeleporters.Remove(Cast<AFGBuildableFactory>(teleporter));
 
-	teleporter->OnEndPlay.RemoveDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
+	// teleporter->OnEndPlay.RemoveDynamic(this, &ACommonInfoSubsystem::removeTeleporter);
 }
 
 void ACommonInfoSubsystem::addUndergroundInputBelt(AFGBuildableStorage* undergroundInputBelt)
@@ -350,16 +374,16 @@ void ACommonInfoSubsystem::addUndergroundInputBelt(AFGBuildableStorage* undergro
 	{
 		allUndergroundInputBelts.Add(undergroundInputBelt);
 
-		undergroundInputBelt->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeUndergroundInputBelt);
+		// undergroundInputBelt->OnEndPlay.AddDynamic(this, &ACommonInfoSubsystem::removeUndergroundInputBelt);
 	}
 }
 
-void ACommonInfoSubsystem::removeUndergroundInputBelt(AActor* undergroundInputBelt, EEndPlayReason::Type reason)
+void ACommonInfoSubsystem::removeUndergroundInputBelt(AActor* undergroundInputBelt/*, EEndPlayReason::Type reason*/)
 {
 	FScopeLock ScopeLock(&ACommonInfoSubsystem::mclCritical);
 	allUndergroundInputBelts.Remove(Cast<AFGBuildableStorage>(undergroundInputBelt));
 
-	undergroundInputBelt->OnEndPlay.RemoveDynamic(this, &ACommonInfoSubsystem::removeUndergroundInputBelt);
+	// undergroundInputBelt->OnEndPlay.RemoveDynamic(this, &ACommonInfoSubsystem::removeUndergroundInputBelt);
 }
 
 #ifndef OPTIMIZE

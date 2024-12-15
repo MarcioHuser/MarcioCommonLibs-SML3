@@ -77,6 +77,9 @@ public:
 	UFUNCTION()
 	virtual void handleBuildableConstructed(class AFGBuildable* buildable);
 
+	UFUNCTION()
+	virtual void handleBuildableRemoved(class AFGBuildable* buildable);
+
 	UFUNCTION(BlueprintCallable, Category="EfficiencyCheckerLogic")
 	virtual bool IsValidBuildable(class AFGBuildable* newBuildable);
 
@@ -84,9 +87,9 @@ public:
 	virtual void addUndergroundInputBelt(class AFGBuildableStorage* actor);
 
 	UFUNCTION()
-	virtual void removeTeleporter(AActor* teleporter, EEndPlayReason::Type reason);
+	virtual void removeTeleporter(AActor* teleporter/*, EEndPlayReason::Type reason*/);
 	UFUNCTION()
-	virtual void removeUndergroundInputBelt(AActor* undergroundInputBelt, EEndPlayReason::Type reason);
+	virtual void removeUndergroundInputBelt(AActor* undergroundInputBelt/*, EEndPlayReason::Type reason*/);
 
 	static FCriticalSection mclCritical;
 
