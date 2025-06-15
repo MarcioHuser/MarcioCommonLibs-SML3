@@ -8,6 +8,8 @@ public class MarcioCommonLibs : ModuleRules
 {
 	public MarcioCommonLibs(ReadOnlyTargetRules Target) : base(Target)
 	{
+		CppStandard = CppStandardVersion.Cpp20;
+		
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		bLegacyPublicIncludePaths = false;
 
