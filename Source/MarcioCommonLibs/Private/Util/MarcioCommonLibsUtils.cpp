@@ -21,7 +21,7 @@
 #include "Util/MCLLogging.h"
 #include "Reflection/BlueprintReflectionLibrary.h"
 #include "Resources/FGEquipmentDescriptor.h"
-#include "UMG/Public/Components/WidgetComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMesh.h"
 
 #ifndef OPTIMIZE
@@ -108,7 +108,7 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 		auto enumProperty = CastField<FEnumProperty>(*property);
 
 		FString cppType;
-		FString cppTypeForward;
+		// FString cppTypeForward;
 		FString cppExtendedType;
 
 		if (floatProperty ||
@@ -128,7 +128,7 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 			)
 		{
 			cppType = property->GetCPPType(&cppExtendedType);
-			cppTypeForward = property->GetCPPTypeForwardDeclaration();
+			// cppTypeForward = property->GetCPPTypeForwardDeclaration();
 		}
 		else
 		{
@@ -141,7 +141,7 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 			TEXT(" (") <<
 			*cppType <<
 			*(!cppExtendedType.IsEmpty() ? cppExtendedType : TEXT("")) <<
-			*(!cppTypeForward.IsEmpty() ? TEXT(" / Forward = ") + cppTypeForward : TEXT("")) <<
+			// *(!cppTypeForward.IsEmpty() ? TEXT(" / Forward = ") + cppTypeForward : TEXT("")) <<
 			TEXT(" / ") <<
 			*property->GetClass()->GetName() <<
 			TEXT(" / RepIndex = ") <<
@@ -288,7 +288,7 @@ void UMarcioCommonLibsUtils::DumpUnknownClass
 
 			auto innerCppType = arrayProperty->Inner->GetCPPType();
 
-			sb << linePrefix << TEXT("        - CPPTypeForwardDeclaration = ") << arrayProperty->GetCPPTypeForwardDeclaration() << EOL;
+			// sb << linePrefix << TEXT("        - CPPTypeForwardDeclaration = ") << arrayProperty->GetCPPTypeForwardDeclaration() << EOL;
 			sb << linePrefix << TEXT("        - Num = ") << arrayHelper.Num() << EOL;
 			sb << linePrefix << TEXT("        - Inner Type = ") << *innerCppType << EOL;
 
