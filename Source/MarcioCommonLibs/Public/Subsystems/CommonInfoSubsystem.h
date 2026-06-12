@@ -97,29 +97,29 @@ public:
 	bool initialized = false;
 
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	UClass* baseStorageTeleporterClass = nullptr;
+	TObjectPtr<UClass> baseStorageTeleporterClass = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	UClass* baseUndergroundSplitterInputClass = nullptr;
+	TObjectPtr<UClass> baseUndergroundSplitterInputClass = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	UClass* baseUndergroundSplitterOutputClass = nullptr;
+	TObjectPtr<UClass> baseUndergroundSplitterOutputClass = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	UClass* baseModularLoadBalancerClass = nullptr;
+	TObjectPtr<UClass> baseModularLoadBalancerClass = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	UClass* baseBuildableFactorySimpleProducerClass = nullptr;
+	TObjectPtr<UClass> baseBuildableFactorySimpleProducerClass = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	UClass* baseCounterLimiterClass = nullptr;
+	TObjectPtr<UClass> baseCounterLimiterClass = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	TSet<UClass*> storageContainerClasses;
+	TSet<TObjectPtr<UClass>> storageContainerClasses;
 
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	TSet<UClass*> powerPoleClasses;
+	TSet<TObjectPtr<UClass>> powerPoleClasses;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	TSet<UClass*> powerPoleWallClasses;
+	TSet<TObjectPtr<UClass>> powerPoleWallClasses;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	TSet<UClass*> powerPoleWallDoubleClasses;
+	TSet<TObjectPtr<UClass>> powerPoleWallDoubleClasses;
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
-	TSet<UClass*> powerTowerClasses;
+	TSet<TObjectPtr<UClass>> powerTowerClasses;
 
 	UPROPERTY(BlueprintReadWrite, Category="MarcioCommonLibs")
 	TSet<TSubclassOf<class UFGItemDescriptor>> nuclearWasteItemDescriptors;
