@@ -1,9 +1,9 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.3.12",
-	"SemVersion": "1.3.12",
-	"GameVersion": ">=495413",
+	"VersionName": "1.3.13",
+	"SemVersion": "1.3.13",
+	"GameVersion": ">=517554",
 	"FriendlyName": "MarcioCommonLibs",
 	"Description": "Common libs",
 	"Category": "Modding",
